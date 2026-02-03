@@ -1,0 +1,564 @@
+{
+  "name": "Clinica Xavier Agendamento",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1312,
+        -64
+      ],
+      "id": "47b3fbc6-1822-4b2b-8a70-89e4931dfaa2",
+      "name": "Telegram Trigger",
+      "webhookId": "e9e4f759-ff16-4fe9-acc3-154b2c59b96c",
+      "credentials": {
+        "telegramApi": {
+          "id": "sd71fNbFKP3laKzY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Mensagem || $json.Audio}}",
+        "options": {
+          "systemMessage": "=## Contexto\nVocê é um assistente virtual de uma cliníca. Seu objetivo principal é agendar horários, consultar disponibilidade. Aja com comunicação direta.\n\n## Horário de funcionamento\nTenha em mente os horários de funcionamento da empresa. Se o cliente tentar agendar ou perguntar disponibilidade fora desses horários, avise educadamente sobre a indisponibilidade.\nSegunda-feira: 08h00 às 17h00\nTerça-feira: 08h00 às 17h00\nQuarta-feira: 08h00 às 17h00\nQuinta-feira: 08h00 às 17h00\nSexta-feira: 08h00 às 17h00\n\n# Tools disponíveis\n1. Agendar: Use para agendar a consulta do cliente.\n\n## Comportamentos-chave\n- SEMPRE baseie suas respostas na data atual: {{new Date(new Date().toLocaleString(\"en-US\", { timeZone: \"America/Belem\" }))}} \n- Interação: nome, data e hora do agendamento, devem ser obtidas via interação com o usuário no chat.\n- Verificação: confirme data, hora do agendamento e detalhe se está disponível.\n- Caso data e hora disponíveis responda '{nome} foi agendado com sucesso para {DD/MM/AAAA} às {HH:MM} horas' \n- Caso data, hora indisponíveis responda 'horário indisponível. Funcionamos apenas de segunda à sexta das 8h00 às 17h00'\n- Cada evento tem duração de 1 hora.\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -224,
+        -48
+      ],
+      "id": "a7425190-46c0-4afd-8df0-123a5ed295e1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9025876e-7390-4202-b77d-dba33ee17063",
+              "name": "Resposta",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "5c9e1122-347a-451c-9a4c-2a544a7a0a92",
+              "name": "Nome",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "352ecde6-494d-4087-b6a0-1de3ad546406",
+              "name": "id",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        -48
+      ],
+      "id": "124ed4b7-3a34-419c-96d2-691f120dc004",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {
+          "maxTokensToSample": 450,
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        144
+      ],
+      "id": "8b024bec-f04a-4a5a-8cbd-11caf3d6e92d",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "6WplpK0kUIeZRJNV",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "v1111111111111111111111111111",
+        "contextWindowLength": 3
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        144
+      ],
+      "id": "088c296c-21a5-446c-affb-285e3c4a588e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.Resposta }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        -48
+      ],
+      "id": "5efc53cd-cdb3-4bd9-b442-0d17d8091de9",
+      "name": "Send a text message",
+      "webhookId": "26a7e71b-6e8f-4a71-b67e-496816e34e70",
+      "credentials": {
+        "telegramApi": {
+          "id": "sd71fNbFKP3laKzY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "1fc6ceb1270bfa631b0b00cf13de71ac3c546b4f9cc401b0950a186aaaee6045@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "N8N"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', `A data e hora de início devem estar no formato ISO 8601:\nYYYY-MM-DDTHH:mm:ss-03:00.\n\nExemplo válido:\n2026-01-25T15:00:00-03:00`, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', `Definição de duração do evento:\n- end.dateTime\n- Manter exatamente o mesmo valor de fuso (-03:00).\n- É proibido converter para UTC ou recalcular timezone.\n\nExemplo:\nstart.dateTime = 2026-01-25T15:00:00-03:00\nend.dateTime   = 2026-01-25T16:00:00-03:00`, 'string') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', `Nome do paciente`, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        144
+      ],
+      "id": "e81248e9-23ea-43ba-9d8d-c5c81fdd0c2e",
+      "name": "Agendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "kTgac5hH14m8fjeK",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bf9c73c6-844a-4f05-8c7a-b8bd5ddc5909",
+              "name": "Audio",
+              "value": "={{ $json.segments[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "b7df3837-ab30-400b-9adf-bca0221a2ad5",
+              "name": "Mensagem",
+              "value": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -48
+      ],
+      "id": "bb7c5494-0eb7-4067-9ab1-29813e5d6da4",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -864,
+        -208
+      ],
+      "id": "0f0da6b4-f195-4432-b1ef-54b66fc9fd1b",
+      "name": "Get a file",
+      "webhookId": "5d0eeba0-0ff8-487a-95d5-052f335fd6e4",
+      "credentials": {
+        "telegramApi": {
+          "id": "sd71fNbFKP3laKzY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Telegram Trigger').item.json.message.voice.file_unique_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "c4b6e179-6b20-46cc-baa9-6456bf161916"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0e68ca01-e35c-4bf9-90d7-8bc5a4953066",
+                    "leftValue": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -992,
+        -64
+      ],
+      "id": "878adb9f-92b3-4d26-b662-5bf41cf071ca",
+      "name": "Text or Audio"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (let i = 0; i < items.length; i++) {\n    if (items[i].binary && items[i].binary.data) {\n        // renomeia o arquivo\n        items[i].binary.data.fileName = items[i].binary.data.fileName.replace(/\\.oga$/, '.ogg');\n        items[i].binary.data.fileExtension = 'ogg';\n        items[i].binary.data.mimeType = 'audio/ogg';\n    }\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        -208
+      ],
+      "id": "bf736093-3cde-4369-8925-4d6b79243680",
+      "name": "Convert .oga to .ogg"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": ""
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "temperature",
+              "value": "0"
+            },
+            {
+              "name": "response_format",
+              "value": "verbose_json"
+            },
+            {
+              "name": "language",
+              "value": "pt"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -560,
+        -208
+      ],
+      "id": "c6ad8ee4-9e29-4485-887d-9205e5bdd6a1",
+      "name": "HTTP Transcrible",
+      "credentials": {
+        "groqApi": {
+          "id": "YXyi7BNOMB4AHQBc",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1152,
+        -64
+      ],
+      "id": "7bb44132-0275-4b99-a5db-8a3fbf65b247",
+      "name": "Typing",
+      "webhookId": "a3d66e3a-8f5d-4a36-88d0-3eefadfc8a23",
+      "credentials": {
+        "telegramApi": {
+          "id": "sd71fNbFKP3laKzY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        32,
+        144
+      ],
+      "id": "f986b2a5-6ba9-4a27-a64c-74b48fcb8129",
+      "name": "Calculator"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Typing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Convert .oga to .ogg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text or Audio": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert .oga to .ogg": {
+      "main": [
+        [
+          {
+            "node": "HTTP Transcrible",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Transcrible": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Typing": {
+      "main": [
+        [
+          {
+            "node": "Text or Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "43f531f6-bb25-4256-8465-a3eb70ca312d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "321991b3ad758cfb9f8265bf1224778716bccabd02ea622f0593e71faee04fe8"
+  },
+  "id": "YNAtRCXe7BB5XjGZxy_wh",
+  "tags": []
+}
